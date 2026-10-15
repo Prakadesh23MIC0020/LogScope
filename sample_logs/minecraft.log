@@ -1,0 +1,21 @@
+[21:30:01] [Server thread/INFO]: Starting minecraft server
+[21:30:02] [Server thread/INFO]: Loading properties
+[21:30:03] [Server thread/INFO]: Preparing level "world"
+[21:30:10] [Server thread/INFO]: Done loading world
+[21:31:02] [Server thread/ERROR]: Could not load plugin ExamplePlugin
+java.lang.NullPointerException: Cannot invoke "String.length()" because "name" is null
+    at com.example.ExamplePlugin.loadPlayer(ExamplePlugin.java:42)
+    at com.example.ExamplePlugin.onEnable(ExamplePlugin.java:25)
+    at org.bukkit.plugin.java.JavaPlugin.setEnabled(JavaPlugin.java:281)
+
+[21:31:04] [Server thread/WARN]: Can't keep up! Is the server overloaded?
+[21:31:05] [Server thread/ERROR]: Database connection failed
+java.sql.SQLException: Access denied for user 'minecraft'
+    at com.example.Database.connect(Database.java:87)
+    at com.example.Server.start(Server.java:54)
+
+[21:31:06] [Server thread/ERROR]: Connection refused
+[21:31:07] [Server thread/INFO]: Player joined
+[21:31:08] [Server thread/ERROR]: Could not load plugin ExamplePlugin
+java.lang.NullPointerException: Cannot invoke "String.length()" because "name" is null
+    at com.example.ExamplePlugin.loadPlayer(ExamplePlugin.java:42)

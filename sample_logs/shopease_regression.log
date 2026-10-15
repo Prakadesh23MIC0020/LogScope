@@ -1,0 +1,13 @@
+2026-10-15 10:00:00 ERROR SQL query failed for order endpoint
+org.postgresql.util.PSQLException: ERROR: column orders.last_updated does not exist
+2026-10-15 10:00:01 INFO GET /api/orders/1024 HTTP 500
+2026-10-15 10:01:00 ERROR payment gateway read timed out for checkout
+2026-10-15 10:01:01 INFO POST /api/checkout HTTP 502
+2026-10-15 10:02:00 ERROR HikariPool-1 - Connection is not available, request timed out after 5000ms
+2026-10-15 10:02:01 INFO GET /api/inventory HTTP 503
+2026-10-15 10:03:00 ERROR Cannot invoke "java.time.Instant.toString()" because "cart.getLastUpdated()" is null
+2026-10-15 10:04:00 WARNING Failed login attempt for user: admin@example.com
+2026-10-15 10:04:10 WARNING Failed login attempt for user: admin@example.com
+2026-10-15 10:04:20 WARNING Failed login attempt for user: admin@example.com
+2026-10-15 10:04:30 WARNING Failed login attempt for user: admin@example.com
+2026-10-15 10:04:40 WARNING Failed login attempt for user: admin@example.com

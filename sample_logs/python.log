@@ -1,0 +1,17 @@
+2026-10-07 21:40:01 INFO Application starting
+2026-10-07 21:40:02 INFO Loading configuration
+2026-10-07 21:40:03 ERROR Failed to load user data
+Traceback (most recent call last):
+  File "app.py", line 42, in load_user
+    name = data["name"]
+KeyError: 'name'
+
+2026-10-07 21:40:05 WARNING Cache is almost full
+
+2026-10-07 21:40:07 ERROR Database unavailable
+Traceback (most recent call last):
+  File "database.py", line 88, in connect
+    connection = connect_to_database()
+ConnectionError: connection refused
+
+2026-10-07 21:40:10 INFO Application stopped

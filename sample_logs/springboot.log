@@ -1,0 +1,10 @@
+2026-10-07T21:50:01.000+05:30 INFO  Application - Starting application
+2026-10-07T21:50:02.000+05:30 INFO  Application - Initializing database
+2026-10-07T21:50:03.000+05:30 ERROR Application - Failed to initialize database
+java.sql.SQLException: Access denied for user 'root'@'localhost'
+    at com.mysql.cj.jdbc.ConnectionImpl.createNewIO(ConnectionImpl.java:836)
+    at com.mysql.cj.jdbc.ConnectionImpl.connectOneTryOnly(ConnectionImpl.java:956)
+    at com.example.service.DatabaseService.connect(DatabaseService.java:71)
+
+2026-10-07T21:50:04.000+05:30 WARN  Application - Configuration property is deprecated
+2026-10-07T21:50:05.000+05:30 ERROR Application - Connection refused to localhost:8080

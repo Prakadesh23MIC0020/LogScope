@@ -1,0 +1,131 @@
+{
+    "NullPointerException": {
+        "environment": "Java",
+        "component": "Application",
+        "pattern": "null",
+        "description": "The code attempted to use an object that contains a null value.",
+        "cause": "A required object was not initialized before the method or field was accessed.",
+        "fix": "Check where the object is created and validate it before using it.",
+        "example": "if (obj != null) { obj.method(); }"
+    },
+
+    "IndexOutOfBoundsException": {
+        "environment": "Java",
+        "component": "Application",
+        "pattern": "index out of bounds",
+        "description": "The application attempted to access an invalid array or collection index.",
+        "cause": "The requested index is outside the valid range.",
+        "fix": "Check the collection size before accessing the index.",
+        "example": "if (index >= 0 && index < list.size()) { ... }"
+    },
+
+    "IllegalArgumentException": {
+        "environment": "Java",
+        "component": "Application",
+        "pattern": "illegal argument",
+        "description": "A method received an argument that it does not accept.",
+        "cause": "The supplied value does not satisfy the method's requirements.",
+        "fix": "Validate the input before passing it to the method.",
+        "example": "if (value == null || value < 0) { return; }"
+    },
+
+    "IllegalStateException": {
+        "environment": "Java",
+        "component": "Application",
+        "pattern": "already removed",
+        "description": "The application attempted an operation that is invalid for the object's current state.",
+        "cause": "The object has already been removed, closed, completed, or transitioned to another state.",
+        "fix": "Check the object's state before performing the operation and identify code that changes that state unexpectedly.",
+        "example": "if (!object.isClosed()) { object.process(); }"
+    },
+
+    "IOException": {
+        "environment": "Java",
+        "component": "File / Storage",
+        "pattern": "ioexception",
+        "description": "An input/output operation failed.",
+        "cause": "The application could not successfully read from or write to the required resource.",
+        "fix": "Check the affected file, directory, storage device, permissions and underlying I/O resource.",
+        "example": ""
+    },
+
+    "FileNotFoundException": {
+        "environment": "Java",
+        "component": "File System",
+        "pattern": "file not found",
+        "description": "The application attempted to access a file that could not be found.",
+        "cause": "The file path may be incorrect or the file may have been removed.",
+        "fix": "Verify that the file exists and that the configured path is correct.",
+        "example": ""
+    },
+
+    "NoSuchFileException": {
+        "environment": "Java",
+        "component": "File System",
+        "pattern": "no such file",
+        "description": "The requested file or directory does not exist.",
+        "cause": "The configured path points to a missing resource.",
+        "fix": "Verify the path and restore or create the missing resource if required.",
+        "example": ""
+    },
+
+    "PermissionError": {
+        "environment": "Python",
+        "component": "File System",
+        "pattern": "permission",
+        "description": "Python was not allowed to access the requested resource.",
+        "cause": "The process does not have sufficient permissions.",
+        "fix": "Check file ownership and read/write permissions.",
+        "example": ""
+    },
+
+    "Permission Denied": {
+        "environment": "General",
+        "component": "File System",
+        "pattern": "permission denied",
+        "description": "The application was denied access to the requested resource.",
+        "cause": "The process does not have sufficient permissions to access or modify the resource.",
+        "fix": "Check ownership and read/write permissions for the affected resource.",
+        "example": ""
+    },
+
+    "ConnectionRefused": {
+        "environment": "General",
+        "component": "Network",
+        "pattern": "connection refused",
+        "description": "The application attempted to connect to a service that rejected the connection.",
+        "cause": "The target service may not be running or may not be listening on the configured port.",
+        "fix": "Verify that the target service is running and that the configured host and port are correct.",
+        "example": ""
+    },
+
+    "TimeoutError": {
+        "environment": "General",
+        "component": "Network",
+        "pattern": "timed out",
+        "description": "The operation did not complete within the allowed time.",
+        "cause": "The target service may be slow, unavailable or unreachable.",
+        "fix": "Check network connectivity, service availability and timeout configuration.",
+        "example": ""
+    },
+
+    "SQLException": {
+        "environment": "SQL",
+        "component": "Database",
+        "pattern": "sql",
+        "description": "A database operation failed.",
+        "cause": "The database rejected or could not execute the requested operation.",
+        "fix": "Inspect the SQL message and database configuration for the specific cause.",
+        "example": ""
+    },
+
+    "ModuleNotFoundError": {
+        "environment": "Python",
+        "component": "Application",
+        "pattern": "no module named",
+        "description": "Python could not find a required module.",
+        "cause": "The dependency may not be installed or the import path may be incorrect.",
+        "fix": "Install the required dependency and verify the import name.",
+        "example": "pip install package_name"
+    }
+}

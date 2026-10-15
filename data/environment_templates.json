@@ -1,0 +1,212 @@
+{
+    "Minecraft": {
+        "indicators": [
+            "minecraft",
+            "net.minecraft",
+            "server thread",
+            "MinecraftServer",
+            "ServerLevel",
+            "ServerGamePacketListenerImpl"
+        ],
+        "components": {
+            "Chunk Storage": [
+                "RegionFileStorage",
+                "ChunkStorage",
+                "ServerChunkCache",
+                "Failed to read chunk data",
+                "Failed to load chunk",
+                "chunk data"
+            ],
+            "Player Data": [
+                "PlayerDataStorage",
+                "PlayerList",
+                "player data",
+                "Failed to save player data"
+            ],
+            "Entity System": [
+                "Entity.tick",
+                "ticking entity",
+                "tickNonPassenger",
+                "Entity.java"
+            ],
+            "Network": [
+                "ServerGamePacketListenerImpl",
+                "ServerboundMovePlayerPacket",
+                "packet",
+                "handleMovePlayer"
+            ],
+            "World": [
+                "ServerLevel",
+                "world",
+                "Saving world",
+                "level.dat"
+            ]
+        }
+    },
+
+    "Cobblemon": {
+        "indicators": [
+            "cobblemon",
+            "com.cobblemon"
+        ],
+        "components": {
+            "Pokemon System": [
+                "pokemon",
+                "com.cobblemon.mod.common"
+            ],
+            "Battle System": [
+                "battle",
+                "battlefactory"
+            ]
+        }
+    },
+
+    "Fabric": {
+        "indicators": [
+            "fabric",
+            "net.fabricmc"
+        ],
+        "components": {
+            "Fabric Loader": [
+                "FabricLoader",
+                "fabricloader"
+            ],
+            "Mod System": [
+                "mod",
+                "ModContainer",
+                "Entrypoint"
+            ]
+        }
+    },
+
+    "Forge": {
+        "indicators": [
+            "forge",
+            "net.minecraftforge"
+        ],
+        "components": {
+            "Forge Loader": [
+                "ForgeMod",
+                "ModLauncher",
+                "net.minecraftforge"
+            ]
+        }
+    },
+
+    "Paper": {
+        "indicators": [
+            "paper",
+            "org.bukkit",
+            "spigot"
+        ],
+        "components": {
+            "Plugin System": [
+                "plugin",
+                "PluginManager",
+                "org.bukkit"
+            ]
+        }
+    },
+
+    "Spring Boot": {
+        "indicators": [
+            "springframework",
+            "spring boot",
+            "springboot"
+        ],
+        "components": {
+            "Web": [
+                "DispatcherServlet",
+                "FrameworkServlet",
+                "Controller"
+            ],
+            "Database": [
+                "JdbcTemplate",
+                "Hibernate",
+                "JPA",
+                "Repository",
+                "DataSource"
+            ]
+        }
+    },
+
+    "MySQL": {
+        "indicators": [
+            "mysql",
+            "mysql.connector",
+            "pymysql",
+            "com.mysql",
+            "sqlstate"
+        ],
+        "components": {
+            "Database": [
+                "SQLException",
+                "SQL",
+                "query",
+                "table",
+                "column",
+                "database"
+            ]
+        }
+    },
+
+    "PostgreSQL": {
+        "indicators": [
+            "postgres",
+            "postgresql",
+            "psycopg"
+        ],
+        "components": {
+            "Database": [
+                "SQLException",
+                "query",
+                "table",
+                "column"
+            ]
+        }
+    },
+
+    "SQLite": {
+        "indicators": [
+            "sqlite",
+            "sqlite3"
+        ],
+        "components": {
+            "Database": [
+                "database",
+                "query",
+                "table",
+                "column"
+            ]
+        }
+    },
+
+    "Python": {
+        "indicators": [
+            "traceback",
+            "python",
+            ".py:"
+        ],
+        "components": {
+            "Application": [
+                "Traceback",
+                "Exception"
+            ]
+        }
+    },
+
+    "Java": {
+        "indicators": [
+            "java.lang.",
+            "java.io.",
+            "java.sql.",
+            ".java:"
+        ],
+        "components": {
+            "Application": [
+                "Exception",
+                "Error"
+            ]
+        }
+    }
+}
