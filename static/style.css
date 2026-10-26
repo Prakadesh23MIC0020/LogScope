@@ -2069,3 +2069,135 @@ select:focus-visible {
         width: 100%;
     }
 }
+
+/* =========================================================
+   POLISHED PRODUCT UI — layout, controls, and GitHub browser
+   ========================================================= */
+:root {
+    --bg: #090b10;
+    --surface: #10141c;
+    --surface-2: #151b25;
+    --surface-3: #1b2431;
+    --border: rgba(173, 190, 215, .14);
+    --border-hover: rgba(173, 190, 215, .28);
+    --text: #f3f6fb;
+    --text-2: #c1cad8;
+    --muted: #8794a8;
+    --blue: #8ab4ff;
+    --blue-strong: #4f8df7;
+    --radius: 14px;
+}
+
+body {
+    background: radial-gradient(ellipse at 50% -15%, rgba(64, 105, 174, .16), transparent 48%), var(--bg);
+    letter-spacing: .005em;
+}
+
+.block-container { width: min(1320px, calc(100% - 48px)); }
+.hero { padding: 28px 0 24px; }
+.hero-title { letter-spacing: -.035em; font-size: clamp(30px, 3vw, 42px); }
+.hero-subtitle { max-width: 760px; color: var(--text-2); font-size: 14px; }
+.stat-card, .tab-page, .github-repo-form, .dropbox-file-list, .info-box {
+    border-color: var(--border) !important;
+    box-shadow: 0 12px 36px rgba(0,0,0,.12);
+}
+.tabs { gap: 8px; border-bottom: 1px solid var(--border); padding: 0 0 12px; }
+.tab {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 10px 15px;
+    color: var(--text-2);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 650;
+    transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+.tab:hover { background: rgba(255,255,255,.045); border-color: var(--border); transform: translateY(-1px); }
+.tab.active { background: rgba(102, 153, 235, .13); border-color: rgba(125, 169, 245, .3); color: #cfe0ff; }
+button, .analyze-button, .secondary-button {
+    min-height: 40px;
+    border-radius: 10px;
+    font-weight: 650;
+    font-size: 13px;
+    line-height: 1.25;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease, opacity .16s ease;
+}
+button:not(:disabled):hover { transform: translateY(-1px); }
+button:not(:disabled):active { transform: translateY(0); }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid rgba(120, 168, 255, .85); outline-offset: 2px; }
+button:disabled { opacity: .42; cursor: not-allowed; transform: none; }
+.analyze-button {
+    width: auto;
+    color: #08101d;
+    background: linear-gradient(135deg, #c6dcff, #8fb8ff);
+    border: 1px solid rgba(196, 219, 255, .7);
+    box-shadow: 0 5px 18px rgba(78, 132, 219, .14);
+}
+.analyze-button:not(:disabled):hover { background: linear-gradient(135deg, #d6e6ff, #a3c5ff); box-shadow: 0 8px 22px rgba(78, 132, 219, .22); }
+.secondary-button { background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); }
+.secondary-button:hover { background: var(--surface-3); border-color: var(--border-hover); color: var(--text); }
+input:not([type="checkbox"]), textarea, select {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #0d1118;
+    color: var(--text);
+    min-height: 42px;
+}
+input:not([type="checkbox"]):focus, textarea:focus, select:focus { border-color: rgba(125, 169, 245, .65); box-shadow: 0 0 0 3px rgba(92, 145, 235, .1); outline: none; }
+::placeholder { color: #68768a; opacity: 1; }
+
+#github.tab-page { padding: clamp(18px, 2.4vw, 30px); }
+#github .section-heading-row { margin-bottom: 20px; }
+#github h2 { margin: 0 0 6px; font-size: clamp(22px, 2vw, 28px); letter-spacing: -.025em; }
+#github .section-heading-row .muted { max-width: 760px; line-height: 1.65; }
+.github-repo-form { margin-top: 0; padding: 20px; border-radius: 14px; background: linear-gradient(135deg, rgba(255,255,255,.025), rgba(255,255,255,.008)); }
+.github-repo-form label { margin-bottom: 9px; font-size: 12px; letter-spacing: .045em; text-transform: uppercase; color: #aab8cc; }
+.github-repo-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; gap: 12px; }
+.github-repo-controls input { width: 100%; min-width: 0; height: 44px; padding: 0 14px; font-size: 14px; }
+.github-repo-controls #loadGithubFiles { min-width: 132px; width: auto; white-space: nowrap; }
+.github-repo-form .muted { margin-top: 10px; font-size: 12px; line-height: 1.5; }
+.dropbox-toolbar { display: grid; grid-template-columns: minmax(200px, 1fr) auto; align-items: center; gap: 12px; margin: 18px 0 12px; }
+#githubSearch { width: 100%; min-width: 0; height: 42px; padding: 0 13px; font-size: 13px; }
+.dropbox-selection-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.dropbox-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 2px 12px; font-size: 12px; }
+.selection-count { flex: 0 0 auto; border: 1px solid rgba(124, 169, 245, .25); background: rgba(92, 145, 235, .1); color: #bcd4ff; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 700; }
+.dropbox-file-list { min-height: 150px; max-height: 460px; overflow: auto; padding: 8px; border: 1px solid var(--border); border-radius: 13px; background: rgba(8, 11, 17, .55); }
+.repo-file-row { display: grid; grid-template-columns: 18px 34px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid transparent; border-radius: 9px; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+.repo-file-row + .repo-file-row { margin-top: 3px; }
+.repo-file-row:hover { background: rgba(255,255,255,.035); border-color: var(--border); }
+.repo-file-row:has(.repo-file-checkbox:checked) { background: rgba(84, 136, 224, .09); border-color: rgba(116, 164, 244, .22); }
+.repo-file-checkbox { accent-color: #77a8ff; width: 16px; height: 16px; margin: 0; }
+.repo-file-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: #182337; color: #a9c8ff; border: 1px solid rgba(123, 166, 241, .16); font-size: 9px; font-weight: 800; }
+.repo-file-details { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.repo-file-name { color: #e7edf7; font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+.repo-file-path { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.repo-file-size { color: #a0aec1; font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dropbox-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.dropbox-footer .muted { max-width: 680px; font-size: 11px; line-height: 1.6; }
+#analyzeGithubButton { flex: 0 0 auto; min-width: 210px; }
+#githubMessage { margin-top: 12px; }
+#githubMessage:empty { display: none; }
+#githubMessage .message { padding: 12px 14px; border: 1px solid rgba(100, 160, 255, .2); border-radius: 10px; background: rgba(67, 116, 194, .09); color: #bcd4ff; font-size: 13px; line-height: 1.55; }
+#githubMessage .message.error { border-color: rgba(248, 113, 113, .24); background: rgba(248, 113, 113, .07); color: #ffb6b6; }
+.info-box { padding: 20px; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); background: rgba(255,255,255,.012); font-size: 13px; }
+
+@media (max-width: 760px) {
+    .block-container { width: calc(100% - 28px); }
+    .tabs { overflow-x: auto; }
+    .tab { flex: 0 0 auto; }
+    .dropbox-toolbar { grid-template-columns: 1fr; }
+    .dropbox-selection-actions { display: grid; grid-template-columns: 1fr 1fr; }
+    .dropbox-selection-actions button { width: 100%; }
+    .dropbox-meta-row { align-items: flex-start; }
+    .dropbox-footer { align-items: stretch; flex-direction: column; }
+    #analyzeGithubButton { width: 100%; }
+}
+@media (max-width: 520px) {
+    .github-repo-controls { grid-template-columns: 1fr; }
+    .github-repo-controls #loadGithubFiles { width: 100%; }
+    .repo-file-row { grid-template-columns: 16px 30px minmax(0, 1fr); gap: 9px; padding: 10px 7px; }
+    .repo-file-icon { width: 30px; height: 30px; }
+    .repo-file-size { grid-column: 3; }
+}

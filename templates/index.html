@@ -106,14 +106,14 @@
             <div class="section-heading-row">
                 <div>
                     <h2>Public GitHub Logs</h2>
-                    <p class="muted">Browse log files from any public GitHub repository, select multiple files, and analyze them with LogScope.</p>
+                    <p class="muted">Import sample logs from a public repository and analyze selected files with LogScope. No GitHub account or token is needed.</p>
                 </div>
             </div>
 
             <div class="github-repo-form">
                 <label for="githubRepoUrl">Public repository URL</label>
                 <div class="github-repo-controls">
-                    <input id="githubRepoUrl" type="url" placeholder="https://github.com/logpai/loghub" autocomplete="url">
+                    <input id="githubRepoUrl" type="url" placeholder="https://github.com/owner/repository" autocomplete="url" value="https://github.com/RNKushwaha/sample-files">
                     <button id="loadGithubFiles" class="analyze-button">Load files</button>
                 </div>
                 <p class="muted">No GitHub login or token required for public repositories. Private repositories are not supported.</p>
@@ -133,11 +133,11 @@
             </div>
 
             <div id="githubFileList" class="dropbox-file-list">
-                <div class="info-box">Example: https://github.com/logpai/loghub</div>
+                <div class="info-box">Enter a public repository, then choose Load files to browse supported logs.</div>
             </div>
 
             <div class="dropbox-footer">
-                <div class="muted">Supported: .log, .txt, .out, .err, .json, .csv · Up to 50 files per batch, 5 MB per file and 15 MB total. GitHub's public API has rate limits.</div>
+                <div class="muted">Supported: log, text, trace, JSON, CSV and common system-log formats. Up to 50 files per batch · 5 MB per file · 15 MB total.</div>
                 <button id="analyzeGithubButton" class="analyze-button" disabled>Fetch &amp; Analyze selected</button>
             </div>
             <div id="githubMessage" class="message-area"></div>

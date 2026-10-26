@@ -58,7 +58,7 @@ app = Flask(
 
 
 GITHUB_API = "https://api.github.com"
-GITHUB_ALLOWED_EXTENSIONS = {".log", ".txt", ".out", ".err", ".json", ".csv"}
+GITHUB_ALLOWED_EXTENSIONS = {".log", ".txt", ".out", ".err", ".json", ".csv", ".xml", ".yaml", ".yml", ".properties", ".trace", ".dump", ".syslog"}
 GITHUB_MAX_FILES = 50
 GITHUB_MAX_FILE_BYTES = 5 * 1024 * 1024
 GITHUB_MAX_BATCH_BYTES = 15 * 1024 * 1024
@@ -127,7 +127,11 @@ def _github_list_files(repo_value):
         path = item.get("path") or ""
         ext = os.path.splitext(path.lower())[1]
         size = int(item.get("size") or 0)
-        if ext not in GITHUB_ALLOWED_EXTENSIONS or size > GITHUB_MAX_FILE_BYTES:
+        basename = path.rsplit("/", 1)[-1].lower()
+        # Also accept extensionless files explicitly named as logs/traces, while
+        # avoiding source code, README files, and arbitrary repository assets.
+        looks_like_log = any(token in basename for token in ("log", "error", "trace", "syslog", "events"))
+        if (ext not in GITHUB_ALLOWED_EXTENSIONS and not (not ext and looks_like_log)) or size > GITHUB_MAX_FILE_BYTES:
             continue
         if not path or size < 0:
             continue

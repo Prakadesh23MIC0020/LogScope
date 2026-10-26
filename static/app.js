@@ -188,7 +188,7 @@ async function loadGithubFiles() {
         if (data.tree_truncated) {
             setGithubMessage("GitHub returned a truncated repository tree. The displayed file list may not include every file.");
         } else if (!githubFiles.length) {
-            setGithubMessage("No supported log files were found. Try a repository containing .log, .txt, .out, .err, .json or .csv files.");
+            setGithubMessage("No supported log files were found. Try a repository with .log, .txt, .out, .err, .json, .csv, .xml, .yaml or .syslog files. Large files are skipped.", true);
         }
     } catch (error) {
         githubFiles = [];
