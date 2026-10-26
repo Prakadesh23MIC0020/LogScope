@@ -80,12 +80,68 @@
 
             <button
                 class="tab"
+                data-tab="github"
+            >
+                GitHub Logs
+            </button>
+
+            <button
+                class="tab"
                 data-tab="history"
             >
                 History
             </button>
 
         </div>
+
+
+        <!-- ================================================= -->
+        <!-- PUBLIC GITHUB LOG LIBRARY -->
+        <!-- ================================================= -->
+
+        <section
+            id="github"
+            class="tab-page"
+        >
+            <div class="section-heading-row">
+                <div>
+                    <h2>Public GitHub Logs</h2>
+                    <p class="muted">Browse log files from any public GitHub repository, select multiple files, and analyze them with LogScope.</p>
+                </div>
+            </div>
+
+            <div class="github-repo-form">
+                <label for="githubRepoUrl">Public repository URL</label>
+                <div class="github-repo-controls">
+                    <input id="githubRepoUrl" type="url" placeholder="https://github.com/logpai/loghub" autocomplete="url">
+                    <button id="loadGithubFiles" class="analyze-button">Load files</button>
+                </div>
+                <p class="muted">No GitHub login or token required for public repositories. Private repositories are not supported.</p>
+            </div>
+
+            <div class="dropbox-toolbar">
+                <input id="githubSearch" type="search" placeholder="Search files or folders..." aria-label="Search GitHub files">
+                <div class="dropbox-selection-actions">
+                    <button id="selectVisibleGithub" class="secondary-button">Select visible</button>
+                    <button id="clearGithubSelection" class="secondary-button">Clear selection</button>
+                </div>
+            </div>
+
+            <div class="dropbox-meta-row">
+                <span id="githubStatus" class="muted">Enter a public repository URL to browse supported log files.</span>
+                <span id="githubSelectedCount" class="selection-count">0 selected</span>
+            </div>
+
+            <div id="githubFileList" class="dropbox-file-list">
+                <div class="info-box">Example: https://github.com/logpai/loghub</div>
+            </div>
+
+            <div class="dropbox-footer">
+                <div class="muted">Supported: .log, .txt, .out, .err, .json, .csv · Up to 50 files per batch, 5 MB per file and 15 MB total. GitHub's public API has rate limits.</div>
+                <button id="analyzeGithubButton" class="analyze-button" disabled>Fetch &amp; Analyze selected</button>
+            </div>
+            <div id="githubMessage" class="message-area"></div>
+        </section>
 
 
         <!-- ================================================= -->

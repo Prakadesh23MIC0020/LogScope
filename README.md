@@ -62,3 +62,15 @@ The persistent knowledge base requires PostgreSQL. Configure `DATABASE_URL` befo
 - Confirmed knowledge is reused as a recommendation, not executed automatically. Review it for your specific codebase and environment before applying it.
 - This app currently has no user-account system. If you expose it to the public internet, put authentication and rate limiting in front of the feedback endpoint to reduce malicious or low-quality knowledge submissions. Redaction helps privacy but cannot guarantee removal of every secret.
 - This is not a claim that LogScope can diagnose every possible error. Unmatched errors should still be reported as uncertain rather than assigned an invented root cause.
+
+
+
+## Public GitHub Log Browser
+
+The **GitHub Logs** tab can browse supported text/log files in any public GitHub repository without a GitHub token. Enter a repository URL (for example, `https://github.com/logpai/loghub`), load its default branch file tree, search by filename/path, select multiple files, and choose **Fetch & Analyze** to pass their contents to LogScope's existing analyzer. LogScope does not upload or modify repository contents.
+
+Supported extensions: `.log`, `.txt`, `.out`, `.err`, `.json`, and `.csv`. To keep requests within typical serverless limits, each file is limited to 5 MB, a batch to 15 MB total, and a batch to 50 files. GitHub's unauthenticated API has a rate limit, so repeated repository browsing may require waiting for the limit to reset. Only public repositories are supported. Do not analyze public logs that contain secrets or personal information unless you have permission to process them.
+
+### Using GitHub Logs on Vercel
+
+No GitHub token or new environment variables are required for public repositories. Deploy the updated LogScope application, open **GitHub Logs**, enter a public repository URL, select files, and click **Fetch & Analyze**. The server retrieves the selected files and combines them for one analysis; the repository URL and selected paths are validated server-side.

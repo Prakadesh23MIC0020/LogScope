@@ -3,6 +3,9 @@ let errors = [];
 let stats = {};
 
 let environments = [];
+let pendingSourceName = "";
+let githubFiles = [];
+let selectedGithubPaths = new Set();
 
 let severityPlot = null;
 
@@ -59,6 +62,11 @@ document
 
                     loadKnowledge();
 
+                }
+
+                if (name === "github" && githubFiles.length === 0) {
+                    const repo = $("githubRepoUrl").value.trim();
+                    if (repo) loadGithubFiles();
                 }
 
             }
@@ -128,6 +136,149 @@ $("fileInput")
 
 
 /* ================================================= */
+/* PUBLIC GITHUB LOG LIBRARY */
+/* ================================================= */
+
+$("loadGithubFiles").addEventListener("click", loadGithubFiles);
+$("githubRepoUrl").addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        loadGithubFiles();
+    }
+});
+$("githubSearch").addEventListener("input", renderGithubFiles);
+$("selectVisibleGithub").addEventListener("click", () => {
+    visibleGithubFiles().forEach(file => selectedGithubPaths.add(file.path));
+    renderGithubFiles();
+});
+$("clearGithubSelection").addEventListener("click", () => {
+    selectedGithubPaths.clear();
+    renderGithubFiles();
+});
+$("analyzeGithubButton").addEventListener("click", analyzeSelectedGithubFiles);
+
+function setGithubMessage(message, error = false) {
+    $("githubMessage").innerHTML = message
+        ? `<div class="message ${error ? "error" : ""}">${escapeHtml(message)}</div>`
+        : "";
+}
+
+async function loadGithubFiles() {
+    const repo = $("githubRepoUrl").value.trim();
+    if (!repo) {
+        setGithubMessage("Enter a public GitHub repository URL first.", true);
+        $("githubRepoUrl").focus();
+        return;
+    }
+
+    const button = $("loadGithubFiles");
+    button.disabled = true;
+    button.textContent = "Loading...";
+    $("githubStatus").textContent = "Loading public repository tree...";
+    setGithubMessage("");
+    try {
+        const response = await fetch(`/api/github/files?repo=${encodeURIComponent(repo)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load files from this repository.");
+        githubFiles = data.files || [];
+        selectedGithubPaths.clear();
+        $("githubRepoUrl").value = `https://github.com/${data.repository}`;
+        $("githubStatus").textContent = `${data.repository} · branch ${data.branch} · ${data.count} supported file${data.count === 1 ? "" : "s"}`;
+        renderGithubFiles();
+        if (data.tree_truncated) {
+            setGithubMessage("GitHub returned a truncated repository tree. The displayed file list may not include every file.");
+        } else if (!githubFiles.length) {
+            setGithubMessage("No supported log files were found. Try a repository containing .log, .txt, .out, .err, .json or .csv files.");
+        }
+    } catch (error) {
+        githubFiles = [];
+        selectedGithubPaths.clear();
+        renderGithubFiles();
+        $("githubStatus").textContent = "Could not load repository";
+        setGithubMessage(error.message, true);
+    } finally {
+        button.disabled = false;
+        button.textContent = "Load files";
+    }
+}
+
+function visibleGithubFiles() {
+    const query = $("githubSearch").value.trim().toLowerCase();
+    return githubFiles.filter(file => !query || `${file.name} ${file.display_path}`.toLowerCase().includes(query));
+}
+
+function renderGithubFiles() {
+    const files = visibleGithubFiles();
+    const list = $("githubFileList");
+    if (!files.length) {
+        list.innerHTML = `<div class="info-box">${githubFiles.length ? "No files match your search." : "Load a public repository to view supported files."}</div>`;
+    } else {
+        list.innerHTML = files.map(file => `
+            <label class="repo-file-row">
+                <input class="github-file-checkbox repo-file-checkbox" type="checkbox" data-path="${escapeHtml(file.path)}" ${selectedGithubPaths.has(file.path) ? "checked" : ""}>
+                <span class="repo-file-icon">${escapeHtml(file.name.split(".").pop().toUpperCase().slice(0, 4))}</span>
+                <span class="repo-file-details">
+                    <span class="repo-file-name">${escapeHtml(file.name)}</span>
+                    <span class="repo-file-path">${escapeHtml(file.display_path)}</span>
+                </span>
+                <span class="repo-file-size">${formatFileSize(file.size)}</span>
+            </label>
+        `).join("");
+        list.querySelectorAll(".github-file-checkbox").forEach(input => {
+            input.addEventListener("change", () => {
+                if (input.checked) selectedGithubPaths.add(input.dataset.path);
+                else selectedGithubPaths.delete(input.dataset.path);
+                updateGithubSelectionCount();
+            });
+        });
+    }
+    updateGithubSelectionCount();
+}
+
+function updateGithubSelectionCount() {
+    const count = selectedGithubPaths.size;
+    $("githubSelectedCount").textContent = `${count} selected`;
+    $("analyzeGithubButton").disabled = count === 0;
+    $("analyzeGithubButton").textContent = count ? `Fetch & Analyze ${count} file${count === 1 ? "" : "s"}` : "Fetch & Analyze selected";
+}
+
+async function analyzeSelectedGithubFiles() {
+    const paths = [...selectedGithubPaths];
+    const repo = $("githubRepoUrl").value.trim();
+    if (!paths.length || !repo) return;
+    const button = $("analyzeGithubButton");
+    button.disabled = true;
+    button.textContent = "Fetching files...";
+    setGithubMessage(`Fetching ${paths.length} selected file${paths.length === 1 ? "" : "s"} from GitHub...`);
+    try {
+        const response = await fetch("/api/github/fetch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ repo, paths })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not fetch selected GitHub files.");
+        $("logInput").value = data.text || "";
+        $("fileName").textContent = `${data.count} GitHub file${data.count === 1 ? "" : "s"} ready for analysis`;
+        pendingSourceName = `GitHub ${data.repository} (${(data.files || []).map(file => file.name).join(", ")})`;
+        setGithubMessage(`Retrieved ${data.count} file${data.count === 1 ? "" : "s"} from ${data.repository}. Starting LogScope analysis...`);
+        await analyzeLog();
+        document.querySelector('.tab[data-tab="results"]').click();
+    } catch (error) {
+        setGithubMessage(error.message, true);
+    } finally {
+        updateGithubSelectionCount();
+    }
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+
+/* ================================================= */
 /* ANALYZE */
 /* ================================================= */
 
@@ -194,11 +345,9 @@ async function analyzeLog() {
                             text: text,
 
                             source_name:
-                                $("fileInput")
-                                    .files[0]
-                                    ?.name
-                                ||
-                                "Pasted Log"
+                                pendingSourceName
+                                || $("fileInput").files[0]?.name
+                                || "Pasted Log"
 
                         })
 
@@ -219,6 +368,8 @@ async function analyzeLog() {
 
         }
 
+
+        pendingSourceName = "";
 
         errors =
             data.errors || [];
