@@ -22,7 +22,8 @@ from analyzer.explanations import (
 )
 
 from analyzer.knowledge import (
-    initialize_knowledge
+    initialize_knowledge,
+    lookup_knowledge
 )
 
 from analyzer.lookup import (
@@ -54,6 +55,22 @@ app = Flask(
 
 
 _initialized = False
+
+
+def _learned_pattern_matches(pattern, message):
+    """Require meaningful signature overlap before reusing user-taught fixes."""
+    pattern_text = re.sub(r"[^a-z0-9]+", " ", str(pattern or "").lower()).strip()
+    message_text = re.sub(r"[^a-z0-9]+", " ", str(message or "").lower()).strip()
+    if not pattern_text or not message_text:
+        return False
+    if pattern_text in message_text:
+        return len(pattern_text) >= 8
+    ignored = {"error", "unknown", "exception", "failed", "failure", "issue", "problem", "the", "and", "for", "with", "from"}
+    words = [word for word in pattern_text.split() if len(word) > 2 and word not in ignored]
+    if len(words) < 2:
+        return False
+    matched = sum(1 for word in words if word in message_text.split())
+    return matched >= 2 and matched / len(words) >= 0.65
 
 
 def ensure_database():
@@ -159,6 +176,39 @@ def analyze():
             component = detect_component(raw, primary_environment)
             message = str(error.get("message") or "")
 
+            # Previously confirmed fixes are reused when their generalized signature matches.
+            try:
+                learned = lookup_knowledge(
+                    error_type=error.get("type", "Unknown Error"),
+                    message=message,
+                    environment=primary_environment
+                )
+            except Exception:
+                # Built-in diagnosis should remain available if the persistent
+                # learning store is temporarily unavailable.
+                learned = None
+            if (learned and learned.get("source") == "user-confirmed"
+                    and _learned_pattern_matches(learned.get("pattern"), message)):
+                explanation = {
+                    "category": learned.get("environment") or primary_environment,
+                    "component": learned.get("component") or component,
+                    "description": learned.get("description") or "Previously confirmed diagnosis.",
+                    "cause": learned.get("cause") or "Cause recorded from a user-confirmed resolution.",
+                    "fix": learned.get("fix") or "Review the recorded fix before applying it.",
+                    "code": learned.get("example") or "",
+                    "source": "User-confirmed knowledge",
+                    "confidence": float(learned.get("confidence") or 0.85),
+                    "classification_confidence": float(learned.get("confidence") or 0.85),
+                    "root_cause_confidence": float(learned.get("confidence") or 0.85),
+                    "times_seen": int(learned.get("times_seen") or 0),
+                    "source_links": []
+                }
+                error["explanation"] = explanation
+                error["classification_confidence"] = explanation["classification_confidence"]
+                error["root_cause_confidence"] = explanation["root_cause_confidence"]
+                error["learned_knowledge_id"] = learned.get("id")
+                continue
+
             # Deterministic local rules always take priority over external research.
             diagnosis = resolve_error(
                 error_type=error.get("type", "Unknown Error"),
@@ -262,10 +312,9 @@ def history():
 @app.route("/api/knowledge/feedback", methods=["POST"])
 def knowledge_feedback():
     """Persist only a user-confirmed reusable fix, never uploaded log text."""
-    expected_token = os.getenv("LEARNING_WRITE_TOKEN")
-    supplied_token = request.headers.get("X-Learning-Token", "")
-    if not expected_token or supplied_token != expected_token:
-        return jsonify({"success": False, "error": "Knowledge submission is not enabled or the write token is invalid."}), 403
+    # User-confirmed learning is intentionally explicit. Deployments exposed to
+    # the public internet should additionally put authentication/rate limiting
+    # in front of this endpoint.
     ensure_database()
     data = request.get_json(silent=True) or {}
     error_type = str(data.get("error_type") or "").strip()[:120]
@@ -277,6 +326,7 @@ def knowledge_feedback():
     fix = str(data.get("fix") or "").strip()[:3000]
     example = str(data.get("example") or "").strip()[:3000]
     confirmed = data.get("confirmed") is True
+    outcome = str(data.get("outcome") or "fixed").strip().lower()
     def sanitize_knowledge(value, limit):
         value = str(value or "").strip()
         value = re.sub(r"(?i)(password|token|secret|api[_-]?key|authorization|cookie)\s*[=:]\s*[^\s,;]+", r"\1=<redacted>", value)
@@ -299,8 +349,12 @@ def knowledge_feedback():
     cause = sanitize_knowledge(cause, 1500)
     fix = sanitize_knowledge(fix, 3000)
     example = sanitize_knowledge(example, 3000)
+    if outcome not in ("fixed", "not_fixed"):
+        return jsonify({"success": False, "error": "Outcome must be fixed or not_fixed."}), 400
+    if outcome == "not_fixed":
+        return jsonify({"success": True, "message": "Thanks for the feedback. This fix was marked as unverified; it was not added to trusted knowledge."})
     if not all([error_type, pattern, description, cause, fix]) or not confirmed:
-        return jsonify({"success": False, "error": "A confirmed solution with error type, generalized pattern, description, cause, and fix is required."}), 400
+        return jsonify({"success": False, "error": "Confirm a successful fix and provide an error type, generalized pattern, description, cause, and fix."}), 400
     if len(pattern) < 4:
         return jsonify({"success": False, "error": "Provide a reusable, generalized error pattern."}), 400
     add_knowledge(

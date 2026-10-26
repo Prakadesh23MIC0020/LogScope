@@ -711,6 +711,36 @@ function createErrorCard(error) {
             ${resourcesHtml}
 
 
+            <details class="learning-panel">
+                <summary>Teach LogScope · confirm or improve this fix</summary>
+                <p class="learning-help">Only save a fix after you have verified it resolved the issue. Your submitted solution becomes reusable knowledge for future analyses.</p>
+                <form class="knowledge-feedback-form">
+                    <input type="hidden" name="error_type" value="${escapeHtml(errorType)}">
+                    <input type="hidden" name="environment" value="${escapeHtml(category)}">
+                    <input type="hidden" name="component" value="${escapeHtml(component)}">
+                    <label>Generalized error signature
+                        <input name="pattern" maxlength="180" required value="${escapeHtml(error.message || errorType)}" placeholder="e.g. connection refused to database">
+                    </label>
+                    <label>What happened
+                        <textarea name="description" maxlength="1000" required>${escapeHtml(explanation.description || "")}</textarea>
+                    </label>
+                    <label>Root cause
+                        <textarea name="cause" maxlength="1500" required>${escapeHtml(explanation.cause || "")}</textarea>
+                    </label>
+                    <label>Verified fix
+                        <textarea name="fix" maxlength="3000" required>${escapeHtml(explanation.fix || "")}</textarea>
+                    </label>
+                    <label>Example or code (optional)
+                        <textarea name="example" maxlength="3000">${escapeHtml(explanation.code || "")}</textarea>
+                    </label>
+                    <div class="learning-actions">
+                        <button class="confirm-fix-button" type="submit">✓ Confirm fix & teach LogScope</button>
+                        <button class="not-fixed-button" type="button" data-feedback="not_fixed">This did not fix it</button>
+                    </div>
+                    <div class="learning-status" aria-live="polite"></div>
+                </form>
+            </details>
+
             <details>
 
                 <summary>
@@ -728,6 +758,65 @@ function createErrorCard(error) {
 
 }
 
+
+/* ================================================= */
+/* USER-CONFIRMED LEARNING */
+/* ================================================= */
+
+$("errorCards").addEventListener("submit", async event => {
+    const form = event.target.closest(".knowledge-feedback-form");
+    if (!form) return;
+    event.preventDefault();
+    const status = form.querySelector(".learning-status");
+    const submit = form.querySelector(".confirm-fix-button");
+    const values = Object.fromEntries(new FormData(form).entries());
+    status.textContent = "Saving confirmed solution…";
+    status.className = "learning-status is-pending";
+    submit.disabled = true;
+    try {
+        const response = await fetch("/api/knowledge/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...values, confirmed: true, outcome: "fixed" })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not save feedback.");
+        status.textContent = data.message || "Saved. LogScope can reuse this confirmed fix in future analyses.";
+        status.className = "learning-status is-success";
+        form.classList.add("is-learned");
+        loadKnowledge();
+    } catch (error) {
+        status.textContent = error.message || "Could not save feedback. Check the database connection.";
+        status.className = "learning-status is-error";
+    } finally {
+        submit.disabled = false;
+    }
+});
+
+$("errorCards").addEventListener("click", async event => {
+    const button = event.target.closest('[data-feedback="not_fixed"]');
+    if (!button) return;
+    const form = button.closest(".knowledge-feedback-form");
+    const status = form.querySelector(".learning-status");
+    const values = Object.fromEntries(new FormData(form).entries());
+    button.disabled = true;
+    try {
+        const response = await fetch("/api/knowledge/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...values, confirmed: false, outcome: "not_fixed" })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not submit feedback.");
+        status.textContent = data.message || "Feedback received.";
+        status.className = "learning-status is-pending";
+    } catch (error) {
+        status.textContent = error.message || "Could not submit feedback.";
+        status.className = "learning-status is-error";
+    } finally {
+        button.disabled = false;
+    }
+});
 
 /* ================================================= */
 /* TABLE */

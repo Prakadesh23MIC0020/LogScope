@@ -1719,3 +1719,105 @@ select:focus-visible {
     }
 
 }
+
+/* Learning workflow */
+.learning-panel {
+    margin-top: 22px;
+    padding: 16px 18px;
+    border: 1px solid rgba(110,168,254,.22);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(110,168,254,.055), rgba(167,139,250,.035));
+}
+.learning-panel > summary {
+    color: #b8d2ff;
+    font-weight: 650;
+    cursor: pointer;
+    list-style-position: inside;
+}
+.learning-help {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 12px 0 16px;
+}
+.knowledge-feedback-form {
+    display: grid;
+    gap: 13px;
+}
+.knowledge-feedback-form label {
+    display: grid;
+    gap: 6px;
+    color: var(--text-2);
+    font-size: 13px;
+    font-weight: 600;
+}
+.knowledge-feedback-form input,
+.knowledge-feedback-form textarea {
+    width: 100%;
+    border: 1px solid var(--border-hover);
+    border-radius: 10px;
+    padding: 11px 12px;
+    color: var(--text);
+    background: rgba(5,7,12,.58);
+    outline: none;
+    font-size: 13px;
+    font-weight: 400;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+.knowledge-feedback-form textarea {
+    min-height: 76px;
+    resize: vertical;
+}
+.knowledge-feedback-form input:focus,
+.knowledge-feedback-form textarea:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(110,168,254,.12);
+}
+.learning-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+.learning-actions button {
+    border: 1px solid var(--border-hover);
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 650;
+    font-size: 13px;
+    transition: transform .16s ease, opacity .16s ease, border-color .16s ease;
+}
+.learning-actions button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+.learning-actions button:disabled {
+    opacity: .55;
+    cursor: wait;
+}
+.confirm-fix-button {
+    color: #07130b;
+    background: linear-gradient(120deg, #86efac, #4ade80);
+    border-color: transparent !important;
+}
+.not-fixed-button {
+    color: var(--text-2);
+    background: rgba(255,255,255,.035);
+}
+.learning-status {
+    min-height: 18px;
+    font-size: 13px;
+    color: var(--muted);
+}
+.learning-status.is-success { color: var(--green); }
+.learning-status.is-error { color: var(--red); }
+.learning-status.is-pending { color: var(--yellow); }
+.knowledge-feedback-form.is-learned {
+    border-left: 2px solid var(--green);
+    padding-left: 12px;
+}
+
+@media (max-width: 560px) {
+    .learning-panel { padding: 13px; }
+    .learning-actions { align-items: stretch; flex-direction: column; }
+    .learning-actions button { width: 100%; }
+}

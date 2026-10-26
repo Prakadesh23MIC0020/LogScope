@@ -37,3 +37,28 @@ python -m unittest discover -s tests -v
 `sample_logs/shopease_regression.log` is a regression fixture assembled from the reported ShopEase failure scenarios (missing column/order HTTP 500, checkout payment timeout/HTTP 502, HikariCP acquisition timeout/HTTP 503, nullable cart timestamp, repeated login failures). It is not claimed to be the original user-provided ShopEase log file.
 
 Metrics use these definitions: `total_lines` counts every input line; `total_errors` counts grouped Error/Critical occurrences except correlated downstream HTTP symptoms; `critical` counts only Critical-severity occurrences after that same exclusion; `unique_errors` counts distinct normalized `(type, message signature)` groups, including visible correlated symptoms. Numeric values are retained in signatures when they may distinguish different errors.
+
+
+## Confirmed learning and feedback
+
+LogScope can now learn reusable troubleshooting knowledge from explicit user feedback:
+
+1. Analyze a log and review the diagnosis and suggested fix.
+2. Open **Teach LogScope · confirm or improve this fix** on an error card.
+3. Edit the generalized error signature, explanation, root cause, and fix as needed.
+4. Select **Confirm fix & teach LogScope** only after the fix has been verified to resolve the problem. The solution is saved in the PostgreSQL knowledge table with source `user-confirmed`.
+5. On later analyses, LogScope checks the stored knowledge for a matching error type, message pattern, and environment. A matching user-confirmed solution can be shown as the diagnosis.
+6. If a suggestion did not work, select **This did not fix it**. This feedback is acknowledged but is not promoted into trusted knowledge.
+
+The learning system stores the generalized signature and solution rather than the full uploaded log. It applies basic redaction to secrets, paths, emails, IP addresses, phone numbers, usernames, and identifiers. Users should still review submitted examples and remove sensitive material before saving.
+
+### Database setup
+
+The persistent knowledge base requires PostgreSQL. Configure `DATABASE_URL` before starting the app. The schema is created automatically on startup. Without a working database, persistent learning and knowledge statistics will not be available.
+
+### Important trust and deployment notes
+
+- Learning is **supervised**, not automatic: an error by itself never becomes a trusted fix. A user must explicitly confirm a successful outcome.
+- Confirmed knowledge is reused as a recommendation, not executed automatically. Review it for your specific codebase and environment before applying it.
+- This app currently has no user-account system. If you expose it to the public internet, put authentication and rate limiting in front of the feedback endpoint to reduce malicious or low-quality knowledge submissions. Redaction helps privacy but cannot guarantee removal of every secret.
+- This is not a claim that LogScope can diagnose every possible error. Unmatched errors should still be reported as uncertain rather than assigned an invented root cause.
