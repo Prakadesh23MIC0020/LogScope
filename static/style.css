@@ -2374,3 +2374,77 @@ html, body { max-width: 100%; overflow-x: hidden; }
     .tab { flex: 1 1 auto; }
     .confidence-pill { white-space: normal; }
 }
+
+/* Compact expandable error results */
+.error-card {
+    padding: 0;
+    margin: 0 0 12px;
+    border-radius: 8px;
+    background: #10131a;
+    border: 1px solid rgba(148, 163, 184, .17);
+    box-shadow: none;
+    overflow: hidden;
+}
+.error-card:hover {
+    transform: none;
+    border-color: rgba(148, 163, 184, .30);
+    box-shadow: none;
+}
+.error-card::before { display: none; }
+.error-details { width: 100%; }
+.error-summary {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.2fr) minmax(200px, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    cursor: pointer;
+    list-style: none;
+}
+.error-summary::-webkit-details-marker { display: none; }
+.error-summary-title { font-size: 16px; font-weight: 750; color: var(--text); overflow-wrap: anywhere; }
+.error-summary-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.occurrence-count { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.error-expand-label { color: #a9c9ff; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.error-details[open] > .error-summary { background: rgba(255,255,255,.025); border-bottom: 1px solid var(--border); }
+.error-details[open] .error-expand-label span { display: inline-block; transform: rotate(180deg); }
+.error-detail-content { padding: 20px; display: grid; gap: 12px; line-height: 1.6; }
+.error-detail-content .error-meta { margin: 0 0 6px; }
+.error-detail-content .section-title { margin-top: 5px; }
+.error-summary .badge { margin: 0; }
+.severity-critical { border-color: rgba(248, 113, 113, .4); color: #fecaca; background: rgba(248, 113, 113, .08); }
+.severity-error { border-color: rgba(251, 146, 60, .35); color: #fed7aa; background: rgba(251, 146, 60, .07); }
+.severity-warning { border-color: rgba(250, 204, 21, .3); color: #fef08a; background: rgba(250, 204, 21, .06); }
+
+/* Community fixes are separate from the normal rule-based diagnosis */
+.community-dropdown {
+    border-color: rgba(74, 222, 128, .32);
+    background: rgba(34, 197, 94, .035);
+    border-radius: 7px;
+}
+.community-dropdown > summary { background: rgba(34, 197, 94, .055); }
+.community-dropdown > summary span {
+    background: rgba(74, 222, 128, .12);
+    color: #a7f3c0;
+}
+.community-dropdown-list { padding: 10px; }
+.community-fix-card.compact {
+    border-color: rgba(74, 222, 128, .22);
+    border-radius: 7px;
+    background: rgba(12, 20, 17, .72);
+}
+.community-fix-card.compact .confidence-pill {
+    border-color: rgba(74, 222, 128, .25);
+    background: rgba(74, 222, 128, .07);
+    color: #b7f7ca;
+}
+.community-fix-card, .knowledge-stat, .learning-panel, .file-section, .stat-card, .tabs {
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+@media (max-width: 800px) {
+    .error-summary { grid-template-columns: 1fr auto; gap: 8px 12px; }
+    .error-summary-meta { grid-column: 1 / -1; grid-row: 2; }
+    .error-expand-label { grid-column: 2; grid-row: 1; }
+}

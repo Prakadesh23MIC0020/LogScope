@@ -485,8 +485,6 @@ function renderResults() {
 
     renderErrorCards();
 
-    renderErrorTable();
-
     renderCharts();
 
 }
@@ -503,8 +501,6 @@ $("searchInput")
 
             renderErrorCards();
 
-            renderErrorTable();
-
         }
     );
 
@@ -515,8 +511,6 @@ $("severityFilter")
         () => {
 
             renderErrorCards();
-
-            renderErrorTable();
 
         }
     );
@@ -752,32 +746,21 @@ function createErrorCard(error) {
 
 
     return `
-        <div class="error-card">
-
-            <div class="error-title">
-                ◆ ${escapeHtml(
-                    errorType
-                )}
-            </div>
-
-
-            <div class="badges">
-
-                <span class="badge">
-                    ${escapeHtml(
-                        severity.toUpperCase()
-                    )}
-                </span>
-
-                <span class="badge">
-                    ${escapeHtml(category)}
-                </span>
-
-                <span class="badge">
-                    ${escapeHtml(component)}
-                </span>
-
-            </div>
+        <article class="error-card">
+            <details class="error-details">
+                <summary class="error-summary">
+                    <span class="error-summary-title">◆ ${escapeHtml(errorType)}</span>
+                    <span class="error-summary-meta">
+                        <span class="badge severity-${escapeHtml(severity.toLowerCase())}">${escapeHtml(severity.toUpperCase())}</span>
+                        <span class="badge">${escapeHtml(category)}</span>
+                        <span class="occurrence-count">${Number(error.occurrences || 1)} occurrence${Number(error.occurrences || 1) === 1 ? "" : "s"}</span>
+                    </span>
+                    <span class="error-expand-label">View details <span aria-hidden="true">⌄</span></span>
+                </summary>
+                <div class="error-detail-content">
+                    <div class="badges">
+                        <span class="badge">${escapeHtml(component)}</span>
+                    </div>
 
 
             <div class="error-meta">
@@ -904,8 +887,9 @@ function createErrorCard(error) {
                 )}</pre>
 
             </details>
-
-        </div>
+                </div>
+            </details>
+        </article>
     `;
 
 }
@@ -926,10 +910,10 @@ $("errorCards").addEventListener("submit", async event => {
     status.className = "learning-status is-pending";
     submit.disabled = true;
     try {
-        const response = await fetch("/api/knowledge/feedback", {
+        const response = await fetch("/api/fixes/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...values, confirmed: true, outcome: "fixed" })
+            body: JSON.stringify(values)
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Could not save feedback.");
@@ -969,67 +953,6 @@ $("errorCards").addEventListener("click", async event => {
         button.disabled = false;
     }
 });
-
-/* ================================================= */
-/* TABLE */
-/* ================================================= */
-
-function renderErrorTable() {
-
-    const filtered =
-        filteredErrors();
-
-
-    $("errorTable")
-        .innerHTML =
-        filtered
-            .map(
-                error =>
-                    `
-                    <tr>
-
-                        <td>
-                            ${escapeHtml(
-                                error.type ||
-                                "Unknown Error"
-                            )}
-                        </td>
-
-                        <td>
-                            ${escapeHtml(
-                                error.severity ||
-                                "Error"
-                            )}
-                        </td>
-
-                        <td>
-                            ${escapeHtml(
-                                error.file ||
-                                "Unknown"
-                            )}
-                        </td>
-
-                        <td>
-                            ${escapeHtml(
-                                error.line ||
-                                "-"
-                            )}
-                        </td>
-
-                        <td>
-                            ${escapeHtml(
-                                error.occurrences ||
-                                1
-                            )}
-                        </td>
-
-                    </tr>
-                    `
-            )
-            .join("");
-
-}
-
 
 /* ================================================= */
 /* PLOTLY CHARTS */
@@ -1459,10 +1382,22 @@ document.addEventListener("click", async event => {
         const card = button.closest(".community-fix-card");
         const count = card?.querySelector(".vote-count");
         if (count) count.textContent = `${data.upvotes} upvotes`;
+        if (card && button.dataset.voteType === "community") {
+            const confidence = Math.min(99, 45 + Math.min(Number(data.upvotes || 0), 20) * 2.5);
+            const pill = card.querySelector(".confidence-pill");
+            if (pill) pill.textContent = `${Math.round(confidence)}% confidence`;
+        }
         if (button.dataset.voteType === "rule") {
             const row = button.closest(".rule-feedback-row");
             const text = row?.querySelector(".muted");
-            if (text) text.textContent = `${data.upvotes} users found this rule-based fix helpful`;
+            if (text) {
+                const confidenceMatch = text.textContent.match(/(\d+(?:\.\d+)?)% confidence/);
+                const confidence = Math.min(99, Number(confidenceMatch?.[1] || 55) + (data.already_voted ? 0 : 2.5));
+                text.textContent = `${data.upvotes} users found this rule-based fix helpful · ${Math.round(confidence)}% confidence`;
+            }
+            const parentCard = button.closest(".error-card");
+            const confidenceValue = parentCard?.querySelector(".confidence-value");
+            if (confidenceValue) confidenceValue.textContent = `${Math.min(99, Number(confidenceValue.textContent.replace("%", "")) + (data.already_voted ? 0 : 3))}%`;
         }
         loadKnowledge();
         loadCommunityFixes();

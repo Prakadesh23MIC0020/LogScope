@@ -303,39 +303,8 @@ def analyze():
             component = detect_component(raw, primary_environment)
             message = str(error.get("message") or "")
 
-            # Previously confirmed fixes are reused when their generalized signature matches.
-            try:
-                learned = lookup_knowledge(
-                    error_type=error.get("type", "Unknown Error"),
-                    message=message,
-                    environment=primary_environment
-                )
-            except Exception:
-                # Built-in diagnosis should remain available if the persistent
-                # learning store is temporarily unavailable.
-                learned = None
-            if (learned and learned.get("source") == "user-confirmed"
-                    and _learned_pattern_matches(learned.get("pattern"), message)):
-                explanation = {
-                    "category": learned.get("environment") or primary_environment,
-                    "component": learned.get("component") or component,
-                    "description": learned.get("description") or "Previously confirmed diagnosis.",
-                    "cause": learned.get("cause") or "Cause recorded from a user-confirmed resolution.",
-                    "fix": learned.get("fix") or "Review the recorded fix before applying it.",
-                    "code": learned.get("example") or "",
-                    "source": "User-confirmed knowledge",
-                    "confidence": float(learned.get("confidence") or 0.85),
-                    "classification_confidence": float(learned.get("confidence") or 0.85),
-                    "root_cause_confidence": float(learned.get("confidence") or 0.85),
-                    "times_seen": int(learned.get("times_seen") or 0),
-                    "source_links": []
-                }
-                error["explanation"] = explanation
-                error["classification_confidence"] = explanation["classification_confidence"]
-                error["root_cause_confidence"] = explanation["root_cause_confidence"]
-                error["learned_knowledge_id"] = learned.get("id")
-                continue
-
+            # Keep the normal deterministic diagnosis independent from community submissions.
+            # Matching user fixes are displayed separately by /api/fixes.
             # Deterministic local rules always take priority over external research.
             diagnosis = resolve_error(
                 error_type=error.get("type", "Unknown Error"),
@@ -672,8 +641,6 @@ def submit_community_fix():
         return jsonify({"success": False, "error": "Please provide a more specific error pattern."}), 400
     try:
         fix_id = add_community_fix(error_type, environment, component, pattern, description, cause, fix, example)
-        add_knowledge(error_type, environment, component, pattern, description, cause, fix, example,
-                      source="user-confirmed", confidence=0.70, source_links=[])
         return jsonify({"success": True, "id": fix_id, "message": "Fix shared anonymously. Other users can now upvote it."})
     except Exception:
         app.logger.exception("Community fix submission failed")
