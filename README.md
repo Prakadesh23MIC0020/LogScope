@@ -1,6 +1,6 @@
 # LogScope
 
-LogScope is a Flask-based log analyzer using Neon PostgreSQL through `psycopg`. The existing HTML, CSS, and frontend behavior are retained.
+LogScope is a Flask-based log analyzer using Neon PostgreSQL through `psycopg`. The existing Flask + Neon PostgreSQL architecture and dark visual theme are retained, with a refined interface, community fixes, anonymous upvotes, and no Analysis History page.
 
 ## Run locally (Windows PowerShell)
 
@@ -19,10 +19,10 @@ Open `http://127.0.0.1:5000`. The database URL must point to the existing Neon d
 ## Privacy and learning behavior
 
 - Uploaded logs are processed for the current request only.
-- New analyses are not inserted into the `analyses` table. `/api/history` returns an empty list so the existing History view remains compatible without retaining uploads.
+- New analyses are not inserted into the `analyses` table. The Analysis History page has been removed; `/api/history` remains as a compatibility endpoint returning an empty list.
 - The existing `analyses` table and its existing rows are not deleted or modified.
 - Reusable general solutions remain in the existing `knowledge` table. Error signatures are normalized before learning; raw logs and stack traces are not saved as knowledge.
-- Novel fixes can be added through `POST /api/knowledge/feedback` only when a user submits a solution with `confirmed: true`. Set a strong `LEARNING_WRITE_TOKEN` environment variable and send it in the `X-Learning-Token` header. Submit a generalized pattern, not raw log text.
+- Users can anonymously submit a verified fix through the analysis result. The backend sanitizes the submitted fields, stores a generalized record in `knowledge`, and publishes a community-fix record. No login is required. For a public deployment, configure platform-level rate limiting and monitoring for anonymous submissions.
 - External research sends a short sanitized error signature, not the uploaded log or stack trace.
 - No Gemini SDK, API key, or other paid AI API is required. Diagnosis uses local deterministic rules, the existing knowledge base, and optional Stack Overflow/GitHub search results. Unknown errors are not given invented fixes.
 
@@ -74,3 +74,15 @@ Supported extensions: `.log`, `.txt`, `.out`, `.err`, `.json`, and `.csv`. To ke
 ### Using GitHub Logs on Vercel
 
 No GitHub token or new environment variables are required for public repositories. Deploy the updated LogScope application, open **GitHub Logs**, enter a public repository URL, select files, and click **Fetch & Analyze**. The server retrieves the selected files and combines them for one analysis; the repository URL and selected paths are validated server-side.
+
+
+## Anonymous community fixes and upvotes
+
+- The Knowledge Base tab shows live database counts for built-in rules, user-learned rules, community fixes, and votes. The Analysis History page is removed from the interface; uploads remain temporary.
+- When a user confirms a fix in the analysis result, LogScope stores a sanitized reusable knowledge record and publishes an anonymous community-fix record.
+- Similar community fixes appear in a **View User Fixes** dropdown on an error card. The dropdown is omitted when there are no matching fixes.
+- Users can upvote both the displayed rule-based diagnosis and community fixes without creating an account. A database uniqueness constraint permits one vote per hashed voter address and target, so refreshing the page does not add another vote.
+- Raw IP addresses are not stored. Vote identity is an HMAC hash using `VOTE_HASH_SECRET`; configure a strong, stable secret in deployment. If unset, the database URL is used as a fallback secret, so setting `VOTE_HASH_SECRET` explicitly is recommended.
+- IP-based voting has tradeoffs: people sharing a public IP may share one vote, and IP changes can permit another vote. Behind a reverse proxy, ensure the proxy's forwarded-address behavior is trusted and configured correctly.
+- Confidence is a transparent display score that rises gradually with upvotes and is capped at 99%; votes are signals of usefulness, not proof that a fix is universally correct. User-submitted fixes remain recommendations and are never executed automatically.
+- The community-fix tables (`community_fixes` and `fix_votes`) are created additively by `init_db()`. Existing `knowledge` and `analyses` tables are not dropped or recreated.

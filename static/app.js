@@ -56,12 +56,9 @@ document
                     });
 
 
-                if (name === "history") {
-
-                    loadHistory();
-
+                if (name === "knowledge") {
                     loadKnowledge();
-
+                    loadCommunityFixes();
                 }
 
                 if (name === "github" && githubFiles.length === 0) {
@@ -631,6 +628,7 @@ function renderErrorCards() {
             )
             .join("");
 
+    loadFixInteractions(filtered);
 }
 
 
@@ -812,9 +810,9 @@ function createErrorCard(error) {
                 <div>
                     ${escapeHtml(source)}
                     · Confidence
-                    ${Math.round(
+                    <span class="confidence-value">${Math.round(
                         confidence * 100
-                    )}%
+                    )}%</span>
                 </div>
 
             </div>
@@ -862,9 +860,12 @@ function createErrorCard(error) {
             ${resourcesHtml}
 
 
+            <div class="rule-vote-slot" data-error-index="${errors.indexOf(error)}"></div>
+            <div class="community-fixes-slot" data-error-index="${errors.indexOf(error)}"></div>
+
             <details class="learning-panel">
-                <summary>Teach LogScope · confirm or improve this fix</summary>
-                <p class="learning-help">Only save a fix after you have verified it resolved the issue. Your submitted solution becomes reusable knowledge for future analyses.</p>
+                <summary>Share a fix with the community</summary>
+                <p class="learning-help">Share a fix you personally tested. It will be posted anonymously so other users facing a similar error can find and upvote it.</p>
                 <form class="knowledge-feedback-form">
                     <input type="hidden" name="error_type" value="${escapeHtml(errorType)}">
                     <input type="hidden" name="environment" value="${escapeHtml(category)}">
@@ -885,7 +886,7 @@ function createErrorCard(error) {
                         <textarea name="example" maxlength="3000">${escapeHtml(explanation.code || "")}</textarea>
                     </label>
                     <div class="learning-actions">
-                        <button class="confirm-fix-button" type="submit">✓ Confirm fix & teach LogScope</button>
+                        <button class="confirm-fix-button" type="submit">Share verified fix anonymously</button>
                         <button class="not-fixed-button" type="button" data-feedback="not_fixed">This did not fix it</button>
                     </div>
                     <div class="learning-status" aria-live="polite"></div>
@@ -1338,253 +1339,159 @@ function download(
 
 
 /* ================================================= */
-/* HISTORY */
-/* ================================================= */
-
-async function loadHistory() {
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/history"
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                data.error ||
-                "Could not load history"
-            );
-
-        }
-
-
-        const history =
-            data.history ||
-            [];
-
-
-        if (!history.length) {
-
-            $("historyArea")
-                .innerHTML =
-                "No previous analyses found.";
-
-            return;
-
-        }
-
-
-        $("historyArea")
-            .innerHTML =
-            `
-            <div class="table-container">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                ID
-                            </th>
-
-                            <th>
-                                Source
-                            </th>
-
-                            <th>
-                                Lines
-                            </th>
-
-                            <th>
-                                Errors
-                            </th>
-
-                            <th>
-                                Critical
-                            </th>
-
-                            <th>
-                                Warnings
-                            </th>
-
-                            <th>
-                                Unique
-                            </th>
-
-                            <th>
-                                Created
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${
-                            history
-                                .map(
-                                    item =>
-                                        `
-                                        <tr>
-
-                                            <td>
-                                                ${escapeHtml(
-                                                    item.id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHtml(
-                                                    item.source_name
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHtml(
-                                                    item.total_lines
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHtml(
-                                                    item.total_errors
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHtml(
-                                                    item.critical
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHtml(
-                                                    item.warnings
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHtml(
-                                                    item.unique_errors
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHtml(
-                                                    item.created_at
-                                                )}
-                                            </td>
-
-                                        </tr>
-                                        `
-                                )
-                                .join("")
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-            `;
-
-    }
-
-    catch (error) {
-
-        $("historyArea")
-            .innerHTML =
-            `
-            <div class="message error">
-                ${escapeHtml(
-                    error.message
-                )}
-            </div>
-            `;
-
-    }
-
-}
-
-
-/* ================================================= */
-/* KNOWLEDGE BASE */
+/* COMMUNITY FIXES AND KNOWLEDGE BASE */
 /* ================================================= */
 
 async function loadKnowledge() {
-
     try {
-
-        const response =
-            await fetch(
-                "/api/knowledge"
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (!response.ok) {
-
-            return;
-
-        }
-
-
-        const knowledge =
-            data.stats ||
-            data;
-
-
-        $("knowledgeTotal")
-            .textContent =
-            knowledge.total || 0;
-
-
-        $("knowledgeBuiltIn")
-            .textContent =
-            knowledge.built_in || 0;
-
-
-        $("knowledgeLearned")
-            .textContent =
-            knowledge.learned || 0;
-
-
-        $("knowledgeConfidence")
-            .textContent =
-            `${Math.round(
-                Number(
-                    knowledge.average_confidence ||
-                    0
-                ) * 100
-            )}%`;
-
+        const response = await fetch("/api/knowledge");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load knowledge statistics.");
+        $("knowledgeTotal").textContent = data.total ?? 0;
+        $("knowledgeBuiltIn").textContent = data.built_in ?? 0;
+        $("knowledgeCommunity").textContent = data.community_fixes ?? 0;
+        $("knowledgeVotes").textContent = Number(data.community_votes || 0) + Number(data.rule_votes || 0);
+        $("knowledgeLearned").textContent = data.learned ?? 0;
+        $("knowledgeConfidence").textContent = `${Math.round(Number(data.average_confidence || 0) * 100)}%`;
+    } catch (error) {
+        const list = $("communityFixesList");
+        if (list) list.innerHTML = `<div class="message error">${escapeHtml(error.message || "Could not load knowledge statistics.")}</div>`;
     }
-
-    catch {
-
-    }
-
 }
 
+async function loadCommunityFixes() {
+    const list = $("communityFixesList");
+    if (!list) return;
+    list.innerHTML = `<div class="info-box">Loading community fixes…</div>`;
+    try {
+        const response = await fetch("/api/community-fixes");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not load community fixes.");
+        renderCommunityFixList(list, data.fixes || []);
+    } catch (error) {
+        list.innerHTML = `<div class="message error">${escapeHtml(error.message || "Could not load community fixes.")}</div>`;
+    }
+}
+
+function renderCommunityFixList(container, fixes) {
+    if (!fixes.length) {
+        container.innerHTML = `<div class="empty-state"><strong>No community fixes yet</strong><span>When someone shares a verified fix, it will appear here anonymously.</span></div>`;
+        return;
+    }
+    container.innerHTML = fixes.map(fix => `
+        <article class="community-fix-card">
+            <div class="community-fix-heading">
+                <div><span class="community-kicker">ANONYMOUS COMMUNITY FIX</span><h3>${escapeHtml(fix.error_type || "Application error")}</h3><p class="muted">${escapeHtml(fix.environment || "General")} · ${escapeHtml(fix.pattern || "")}</p></div>
+                <span class="confidence-pill">${Math.round(Number(fix.confidence || 0) * 100)}% confidence</span>
+            </div>
+            <div class="community-fix-body">
+                <p><strong>What happened</strong><br>${escapeHtml(fix.description || "")}</p>
+                <p><strong>Likely cause</strong><br>${escapeHtml(fix.cause || "")}</p>
+                <p><strong>Fix shared</strong><br>${escapeHtml(fix.fix || "")}</p>
+            </div>
+            <div class="community-fix-footer"><span class="vote-count">${Number(fix.upvotes || 0)} upvotes</span><button class="vote-button ${fix.user_voted ? "voted" : ""}" data-vote-type="community" data-vote-key="${fix.id}" ${fix.user_voted ? "disabled" : ""}>${fix.user_voted ? "✓ Upvoted" : "↑ This fix worked"}</button></div>
+        </article>
+    `).join("");
+}
+
+async function loadFixInteractions() {
+    for (const card of document.querySelectorAll(".error-card")) {
+        const index = Number(card.querySelector(".rule-vote-slot")?.dataset.errorIndex);
+        const error = errors[index];
+        if (!error) continue;
+        const explanation = error.explanation || {};
+        const params = new URLSearchParams({
+            error_type: error.type || "Unknown Error",
+            message: error.message || error.type || "Unknown Error",
+            environment: explanation.category || environments[0] || "General",
+            fix: explanation.fix || "",
+            base_confidence: Number(explanation.confidence || 0)
+        });
+        const ruleSlot = card.querySelector(".rule-vote-slot");
+        const communitySlot = card.querySelector(".community-fixes-slot");
+        try {
+            const response = await fetch(`/api/fixes?${params.toString()}`);
+            const data = await response.json();
+            if (!response.ok) continue;
+            const rule = data.rule || {};
+            const confidenceValue = card.querySelector(".confidence-value");
+            if (confidenceValue) confidenceValue.textContent = `${Math.round(Number(rule.confidence || 0) * 100)}%`;
+            ruleSlot.innerHTML = `
+                <div class="rule-feedback-row">
+                    <div><strong>Was this diagnosis useful?</strong><span class="muted">${Number(rule.upvotes || 0)} users found this rule-based fix helpful · ${Math.round(Number(rule.confidence || 0) * 100)}% confidence</span></div>
+                    <button class="vote-button ${rule.user_voted ? "voted" : ""}" data-vote-type="rule" data-vote-key="${escapeHtml(rule.key || "")}" ${rule.user_voted ? "disabled" : ""}>${rule.user_voted ? "✓ Upvoted" : "↑ This fix worked"}</button>
+                </div>`;
+            const fixes = data.community_fixes || [];
+            if (fixes.length) {
+                communitySlot.innerHTML = `<details class="community-dropdown"><summary>View User Fixes <span>${fixes.length}</span></summary><div class="community-dropdown-list">${fixes.map(fix => `
+                    <article class="community-fix-card compact">
+                        <div class="community-fix-heading"><div><span class="community-kicker">ANONYMOUS USER</span><h3>Community Fix</h3><p class="muted">${escapeHtml(fix.pattern || "")}</p></div><span class="confidence-pill">${Math.round(Number(fix.confidence || 0) * 100)}% confidence</span></div>
+                        <p><strong>What happened</strong><br>${escapeHtml(fix.description || "")}</p>
+                        <p><strong>Fix shared</strong><br>${escapeHtml(fix.fix || "")}</p>
+                        <div class="community-fix-footer"><span class="vote-count">${Number(fix.upvotes || 0)} upvotes</span><button class="vote-button ${fix.user_voted ? "voted" : ""}" data-vote-type="community" data-vote-key="${fix.id}" ${fix.user_voted ? "disabled" : ""}>${fix.user_voted ? "✓ Upvoted" : "↑ This fix worked"}</button></div>
+                    </article>`).join("")}</div></details>`;
+            } else {
+                communitySlot.innerHTML = "";
+            }
+        } catch (_) {
+            ruleSlot.innerHTML = "";
+            communitySlot.innerHTML = "";
+        }
+    }
+}
+
+document.addEventListener("click", async event => {
+    const button = event.target.closest("[data-vote-type][data-vote-key]");
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    const original = button.textContent;
+    button.textContent = "Saving…";
+    try {
+        const response = await fetch("/api/fixes/vote", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({target_type: button.dataset.voteType, target_key: button.dataset.voteKey})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Vote could not be saved.");
+        button.textContent = data.already_voted ? "✓ Already upvoted" : "✓ Upvoted";
+        button.classList.add("voted");
+        const card = button.closest(".community-fix-card");
+        const count = card?.querySelector(".vote-count");
+        if (count) count.textContent = `${data.upvotes} upvotes`;
+        if (button.dataset.voteType === "rule") {
+            const row = button.closest(".rule-feedback-row");
+            const text = row?.querySelector(".muted");
+            if (text) text.textContent = `${data.upvotes} users found this rule-based fix helpful`;
+        }
+        loadKnowledge();
+        loadCommunityFixes();
+    } catch (error) {
+        button.disabled = false;
+        button.textContent = original;
+        const slot = button.closest(".rule-feedback-row, .community-fix-footer");
+        if (slot) {
+            let message = slot.querySelector(".vote-error");
+            if (!message) {
+                message = document.createElement("span");
+                message.className = "vote-error";
+                slot.appendChild(message);
+            }
+            message.textContent = error.message || "Vote failed.";
+        }
+    }
+});
+
+if ($("refreshKnowledge")) {
+    $("refreshKnowledge").addEventListener("click", () => {
+        loadKnowledge();
+        loadCommunityFixes();
+    });
+}
 
 /* ================================================= */
 /* INITIAL LOAD */
 /* ================================================= */
 
-loadHistory();
-
 loadKnowledge();
+loadCommunityFixes();

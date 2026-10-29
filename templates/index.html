@@ -87,9 +87,9 @@
 
             <button
                 class="tab"
-                data-tab="history"
+                data-tab="knowledge"
             >
-                History
+                Knowledge Base
             </button>
 
         </div>
@@ -476,99 +476,34 @@
 
 
         <!-- ================================================= -->
-        <!-- HISTORY -->
-        <!-- ================================================= -->
-
-        <section
-            id="history"
-            class="tab-page"
-        >
-
-            <h2>
-                Analysis History
-            </h2>
-
-
-            <div
-                id="historyArea"
-                class="info-box"
-            >
-                Loading history...
+        <!-- KNOWLEDGE BASE -->
+        <section id="knowledge" class="tab-page">
+            <div class="section-heading-row">
+                <div>
+                    <h2>Knowledge Base</h2>
+                    <p class="muted">A live view of built-in rules, community fixes, and feedback from users.</p>
+                </div>
+                <button id="refreshKnowledge" class="secondary-button">Refresh</button>
             </div>
-
-
-            <h2>
-                Knowledge Base
-            </h2>
-
-
-            <div class="stats-grid">
-
-                <div class="stat-card">
-
-                    <div class="stat-title">
-                        TOTAL RULES
-                    </div>
-
-                    <div
-                        id="knowledgeTotal"
-                        class="stat-value"
-                    >
-                        0
-                    </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                    <div class="stat-title">
-                        BUILT-IN
-                    </div>
-
-                    <div
-                        id="knowledgeBuiltIn"
-                        class="stat-value"
-                    >
-                        0
-                    </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                    <div class="stat-title">
-                        USER-LEARNED
-                    </div>
-
-                    <div
-                        id="knowledgeLearned"
-                        class="stat-value"
-                    >
-                        0
-                    </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                    <div class="stat-title">
-                        AVG CONFIDENCE
-                    </div>
-
-                    <div
-                        id="knowledgeConfidence"
-                        class="stat-value"
-                    >
-                        0%
-                    </div>
-
-                </div>
-
+            <div class="knowledge-stats-grid">
+                <div class="knowledge-stat"><div class="stat-title">TOTAL RECORDS</div><div id="knowledgeTotal" class="stat-value">—</div></div>
+                <div class="knowledge-stat"><div class="stat-title">BUILT-IN RULES</div><div id="knowledgeBuiltIn" class="stat-value">—</div></div>
+                <div class="knowledge-stat"><div class="stat-title">COMMUNITY FIXES</div><div id="knowledgeCommunity" class="stat-value">—</div></div>
+                <div class="knowledge-stat"><div class="stat-title">FIX UPVOTES</div><div id="knowledgeVotes" class="stat-value">—</div></div>
+                <div class="knowledge-stat"><div class="stat-title">USER-LEARNED RULES</div><div id="knowledgeLearned" class="stat-value">—</div></div>
+                <div class="knowledge-stat"><div class="stat-title">AVG CONFIDENCE</div><div id="knowledgeConfidence" class="stat-value">—</div></div>
             </div>
-
+            <div class="knowledge-list-section">
+                <div class="section-heading-row">
+                    <div>
+                        <h2>Recent Community Fixes</h2>
+                        <p class="muted">Anonymous fixes shared by users. Upvotes help others identify useful solutions.</p>
+                    </div>
+                </div>
+                <div id="communityFixesList" class="community-fixes-list">
+                    <div class="info-box">Loading community fixes…</div>
+                </div>
+            </div>
         </section>
 
     </div>

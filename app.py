@@ -2,6 +2,8 @@ import os
 import json
 import re
 import time
+import hashlib
+import hmac
 
 import requests
 
@@ -46,7 +48,12 @@ from analyzer.environment_detector import (
 from database.db import (
     init_db,
     add_knowledge,
-    get_knowledge_stats
+    get_knowledge_stats,
+    add_community_fix,
+    find_community_fixes,
+    get_vote_summary,
+    add_fix_vote,
+    get_community_stats
 )
 
 
@@ -157,6 +164,22 @@ def _github_download(file_item):
     )
     response.raise_for_status()
     return response.content
+
+
+def _voter_hash():
+    """One-way, keyed IP hash. Raw IP addresses are never persisted."""
+    address = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+    # Only trust the first forwarded address when running behind a known proxy.
+    address = address.split(",")[0].strip()
+    secret = os.getenv("VOTE_HASH_SECRET") or os.getenv("DATABASE_URL") or "logscope-local-vote-secret"
+    return hmac.new(secret.encode(), address.encode(), hashlib.sha256).hexdigest()
+
+
+def _rule_vote_key(error_type, message, fix):
+    normalized = lambda value: re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
+    raw = "|".join((normalized(error_type), normalized(message), normalized(fix)))
+    return hashlib.sha256(raw.encode()).hexdigest()
+
 
 _initialized = False
 
@@ -548,9 +571,143 @@ def knowledge_feedback():
     add_knowledge(
         error_type=error_type, environment=environment, component=component,
         pattern=pattern, description=description, cause=cause, fix=fix,
-        example=example, source="user-confirmed", confidence=0.90, source_links=[]
+        example=example, source="user-confirmed", confidence=0.70, source_links=[]
     )
-    return jsonify({"success": True, "message": "Confirmed solution saved to the reusable knowledge base."})
+    community_id = add_community_fix(
+        error_type=error_type, environment=environment, component=component,
+        pattern=pattern, description=description, cause=cause, fix=fix, example=example
+    )
+    return jsonify({
+        "success": True,
+        "community_fix_id": community_id,
+        "message": "Your fix was saved anonymously to the knowledge base and shared as a community fix."
+    })
+
+
+
+@app.route("/api/community-fixes", methods=["GET"])
+def community_fixes_list():
+    ensure_database()
+    voter = _voter_hash()
+    try:
+        from database.db import list_community_fixes
+        fixes = list_community_fixes(voter_hash=voter, limit=30)
+        return jsonify({"success": True, "fixes": [
+            {
+                "id": item["id"], "error_type": item["error_type"],
+                "environment": item.get("environment"), "pattern": item["pattern"],
+                "description": item["description"], "cause": item["cause"],
+                "fix": item["fix"], "upvotes": item["upvotes"],
+                "confidence": item["confidence"], "user_voted": item["user_voted"],
+                "created_at": item["created_at"].isoformat() if item.get("created_at") else None
+            } for item in fixes
+        ]})
+    except Exception:
+        app.logger.exception("Could not list community fixes")
+        return jsonify({"success": False, "error": "Could not load community fixes."}), 500
+
+
+@app.route("/api/fixes", methods=["GET"])
+def fixes_for_error():
+    ensure_database()
+    error_type = str(request.args.get("error_type") or "").strip()[:120]
+    message = str(request.args.get("message") or "").strip()[:500]
+    environment = str(request.args.get("environment") or "").strip()[:120]
+    fix = str(request.args.get("fix") or "").strip()[:1000]
+    try:
+        base_confidence = max(0.0, min(0.99, float(request.args.get("base_confidence", "0.55"))))
+    except (TypeError, ValueError):
+        base_confidence = 0.55
+    if not error_type or not message:
+        return jsonify({"success": False, "error": "An error type and message are required."}), 400
+    voter = _voter_hash()
+    key = _rule_vote_key(error_type, message, fix)
+    try:
+        community = find_community_fixes(error_type, message, environment, voter)
+        rule_votes = get_vote_summary("rule", key, voter, base_confidence)
+        return jsonify({
+            "success": True,
+            "rule": {"key": key, **rule_votes},
+            "community_fixes": [
+                {
+                    "id": item["id"], "error_type": item["error_type"],
+                    "environment": item.get("environment"), "pattern": item["pattern"],
+                    "description": item["description"], "cause": item["cause"],
+                    "fix": item["fix"], "example": item.get("example"),
+                    "upvotes": item["upvotes"], "confidence": item["confidence"],
+                    "user_voted": item["user_voted"], "status": item["status"],
+                    "created_at": item["created_at"].isoformat() if item.get("created_at") else None
+                } for item in community
+            ]
+        })
+    except Exception:
+        app.logger.exception("Could not load community fixes")
+        return jsonify({"success": False, "error": "Could not load community fixes."}), 500
+
+
+@app.route("/api/fixes/submit", methods=["POST"])
+def submit_community_fix():
+    ensure_database()
+    data = request.get_json(silent=True) or {}
+
+    def clean(value, limit):
+        value = str(value or "").strip()[:limit]
+        value = re.sub(r"(?i)(password|token|secret|api[_-]?key|authorization|cookie)\s*[=:]\s*[^\s,;]+", r"\1=[REDACTED]", value)
+        value = re.sub(r"[A-Za-z]:\\[^\s]+|/(?:[^\s/]+/)+[^\s]*", "<path>", value)
+        value = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "<email>", value)
+        value = re.sub(r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "<ip>", value)
+        return re.sub(r"\s+", " ", value).strip()
+
+    error_type = clean(data.get("error_type"), 120)
+    environment = clean(data.get("environment") or "General", 120)
+    component = clean(data.get("component") or "General", 120)
+    pattern = clean(data.get("pattern"), 180)
+    description = clean(data.get("description"), 1000)
+    cause = clean(data.get("cause"), 1500)
+    fix = clean(data.get("fix"), 3000)
+    example = clean(data.get("example"), 2000)
+    if not all([error_type, pattern, description, cause, fix]):
+        return jsonify({"success": False, "error": "Complete the error pattern, description, cause, and fix."}), 400
+    if len(pattern) < 4:
+        return jsonify({"success": False, "error": "Please provide a more specific error pattern."}), 400
+    try:
+        fix_id = add_community_fix(error_type, environment, component, pattern, description, cause, fix, example)
+        add_knowledge(error_type, environment, component, pattern, description, cause, fix, example,
+                      source="user-confirmed", confidence=0.70, source_links=[])
+        return jsonify({"success": True, "id": fix_id, "message": "Fix shared anonymously. Other users can now upvote it."})
+    except Exception:
+        app.logger.exception("Community fix submission failed")
+        return jsonify({"success": False, "error": "Could not save the fix. Check the database connection."}), 500
+
+
+@app.route("/api/fixes/vote", methods=["POST"])
+def vote_for_fix():
+    ensure_database()
+    data = request.get_json(silent=True) or {}
+    target_type = str(data.get("target_type") or "")
+    target_key = str(data.get("target_key") or "").strip()
+    if target_type not in ("rule", "community") or not target_key or len(target_key) > 100:
+        return jsonify({"success": False, "error": "Invalid vote target."}), 400
+    if target_type == "rule" and not re.fullmatch(r"[a-f0-9]{64}", target_key):
+        return jsonify({"success": False, "error": "Invalid rule signature."}), 400
+    if target_type == "community" and not target_key.isdigit():
+        return jsonify({"success": False, "error": "Invalid community fix."}), 400
+    try:
+        voter = _voter_hash()
+        if target_type == "community":
+            from database.db import community_fix_exists
+            if not community_fix_exists(int(target_key)):
+                return jsonify({"success": False, "error": "This community fix no longer exists."}), 404
+        result = add_fix_vote(target_type, target_key, voter)
+        return jsonify({
+            "success": True,
+            "already_voted": not result["inserted"],
+            "upvotes": result["upvotes"],
+            "message": "You already upvoted this fix." if not result["inserted"] else "Thanks. Your upvote was counted."
+        })
+    except Exception:
+        app.logger.exception("Fix vote failed")
+        return jsonify({"success": False, "error": "Could not save your vote."}), 500
 
 
 @app.route(
@@ -563,9 +720,20 @@ def knowledge():
 
     try:
 
-        return jsonify(
-            get_knowledge_stats()
+        result = get_knowledge_stats()
+        knowledge_count = int(result.get("total") or 0)
+        knowledge_average = float(result.get("average_confidence") or 0)
+        community_stats = get_community_stats()
+        community_count = int(community_stats.get("community_fixes") or 0)
+        community_average = float(community_stats.get("community_average_confidence") or 0)
+        result.update(community_stats)
+        result["total"] = knowledge_count + community_count
+        denominator = knowledge_count + community_count
+        result["average_confidence"] = round(
+            ((knowledge_average * knowledge_count + community_average * community_count) / denominator)
+            if denominator else 0, 4
         )
+        return jsonify(result)
 
     except Exception as e:
 
