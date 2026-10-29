@@ -253,6 +253,11 @@ def health():
 )
 def analyze():
 
+    configured_integration_key = os.getenv("LOGSCOPE_API_KEY", "").strip()
+    supplied_integration_key = request.headers.get("X-Integration-Key", "").strip()
+    if configured_integration_key and not hmac.compare_digest(configured_integration_key, supplied_integration_key):
+        return jsonify({"success": False, "error": "Unauthorized integration request."}), 401
+
     ensure_database()
 
     try:
@@ -480,6 +485,68 @@ def github_fetch():
         return jsonify({"success": False, "error": "Could not download one of the selected files from GitHub."}), 502
 
 
+
+@app.route("/api/integrations/loghealth/import", methods=["POST"])
+def import_to_loghealth():
+    """Convert the current LogScope analysis into LogHealth's JSON ingestion format."""
+    data = request.get_json(silent=True) or {}
+    source_name = str(data.get("source_name") or "LogScope import")[:180]
+    supplied_errors = data.get("errors") or []
+    if not isinstance(supplied_errors, list) or not supplied_errors:
+        return jsonify({"success": False, "error": "Analyze a log with at least one error before importing it."}), 400
+
+    base_url = (os.getenv("LOGHEALTH_API_URL") or "https://error-insight-ruddy.vercel.app").rstrip("/")
+    api_key = os.getenv("LOGHEALTH_API_KEY", "").strip()
+    if not api_key:
+        return jsonify({"success": False, "error": "LogHealth integration is not configured. Set LOGHEALTH_API_KEY on the LogScope server."}), 503
+
+    records = []
+    for index, item in enumerate(supplied_errors[:1000], start=1):
+        if not isinstance(item, dict):
+            continue
+        message = str(item.get("message") or item.get("raw") or "").strip()
+        if not message:
+            continue
+        raw = str(item.get("raw") or message)
+        timestamp_match = re.search(r"\b\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}\b", raw)
+        records.append({
+            "id": f"logscope-{hashlib.sha256((source_name + '|' + str(index) + '|' + message).encode()).hexdigest()[:24]}",
+            "timestamp": timestamp_match.group(0) if timestamp_match else None,
+            "type": str(item.get("type") or item.get("category") or "Application")[:100],
+            "message": message[:4000],
+            "severity": str(item.get("severity") or "Error")[:40],
+            "source": source_name
+        })
+    if not records:
+        return jsonify({"success": False, "error": "No usable error records were found to import."}), 400
+
+    try:
+        response = requests.post(
+            f"{base_url}/api/logs",
+            json={"errors": records},
+            headers={"X-API-Key": api_key, "X-Source-Project": "LogScope", "Accept": "application/json"},
+            timeout=25
+        )
+        try:
+            result = response.json()
+        except ValueError:
+            result = {}
+        if not response.ok:
+            app.logger.warning("LogHealth import failed with HTTP %s", response.status_code)
+            return jsonify({"success": False, "error": result.get("error") or f"LogHealth returned HTTP {response.status_code}."}), 502
+        return jsonify({
+            "success": True,
+            "accepted": result.get("accepted", 0),
+            "duplicates": result.get("duplicates", 0),
+            "submitted": len(records),
+            "loghealth_url": base_url,
+            "message": result.get("message", "Log imported into LogHealth.")
+        })
+    except requests.RequestException as exc:
+        app.logger.warning("LogHealth integration request failed: %s", type(exc).__name__)
+        return jsonify({"success": False, "error": "Could not reach LogHealth. Check the deployment and integration configuration."}), 502
+
+
 @app.route(
     "/api/history",
     methods=["GET"]
@@ -537,11 +604,7 @@ def knowledge_feedback():
         return jsonify({"success": False, "error": "Confirm a successful fix and provide an error type, generalized pattern, description, cause, and fix."}), 400
     if len(pattern) < 4:
         return jsonify({"success": False, "error": "Provide a reusable, generalized error pattern."}), 400
-    add_knowledge(
-        error_type=error_type, environment=environment, component=component,
-        pattern=pattern, description=description, cause=cause, fix=fix,
-        example=example, source="user-confirmed", confidence=0.70, source_links=[]
-    )
+    # Community submissions stay separate from normal rule-based diagnosis.
     community_id = add_community_fix(
         error_type=error_type, environment=environment, component=component,
         pattern=pattern, description=description, cause=cause, fix=fix, example=example

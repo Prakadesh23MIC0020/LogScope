@@ -86,3 +86,10 @@ No GitHub token or new environment variables are required for public repositorie
 - IP-based voting has tradeoffs: people sharing a public IP may share one vote, and IP changes can permit another vote. Behind a reverse proxy, ensure the proxy's forwarded-address behavior is trusted and configured correctly.
 - Confidence is a transparent display score that rises gradually with upvotes and is capped at 99%; votes are signals of usefulness, not proof that a fix is universally correct. User-submitted fixes remain recommendations and are never executed automatically.
 - The community-fix tables (`community_fixes` and `fix_votes`) are created additively by `init_db()`. Existing `knowledge` and `analyses` tables are not dropped or recreated.
+
+
+## LogHealth integration
+
+Configure `LOGHEALTH_API_URL=https://error-insight-ruddy.vercel.app` and `LOGHEALTH_API_KEY` on the LogScope server. The API key must match LogHealth's `API_KEY` setting and must never be exposed in browser JavaScript. LogScope converts detected errors into LogHealth's JSON ingestion format and opens LogHealth after a successful import.
+
+Set optional `LOGSCOPE_API_KEY` on LogScope and the same `LOGSCOPE_API_KEY` on LogHealth to protect server-to-server requests for further analysis.

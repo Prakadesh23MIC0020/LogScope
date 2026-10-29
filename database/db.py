@@ -201,6 +201,7 @@ def find_knowledge(
                 FROM knowledge
                 WHERE lower(error_type)
                     = lower(%s)
+                  AND COALESCE(source, '') NOT IN ('user-confirmed', 'community')
                 ORDER BY
                     confidence DESC,
                     times_seen DESC

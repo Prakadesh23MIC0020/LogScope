@@ -4,6 +4,7 @@ let stats = {};
 
 let environments = [];
 let pendingSourceName = "";
+let currentLogText = "";
 let githubFiles = [];
 let selectedGithubPaths = new Set();
 
@@ -305,6 +306,8 @@ async function analyzeLog() {
 
     }
 
+
+    currentLogText = text;
 
     $("analyzeButton")
         .disabled =
@@ -1103,6 +1106,48 @@ function renderCharts() {
 
 }
 
+
+/* ================================================= */
+/* LOGHEALTH INTEGRATION */
+/* ================================================= */
+
+$("importToLogHealth")?.addEventListener("click", async () => {
+    const button = $("importToLogHealth");
+    const status = $("logHealthImportStatus");
+    if (!errors.length) {
+        status.textContent = "Analyze a log first.";
+        return;
+    }
+    button.disabled = true;
+    button.textContent = "Importing…";
+    status.textContent = "Converting detected errors to LogHealth JSON…";
+    try {
+        const response = await fetch("/api/integrations/loghealth/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                source_name: pendingSourceName || $("fileInput").files[0]?.name || "LogScope analysis",
+                errors: errors.map(error => ({
+                    type: error.type || "Application",
+                    message: error.message || error.raw || "",
+                    raw: error.raw || "",
+                    severity: error.severity || "Error"
+                }))
+            })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || "Import failed.");
+        status.textContent = `Imported: ${data.accepted} new, ${data.duplicates} duplicate(s). Opening LogHealth…`;
+        window.setTimeout(() => {
+            window.location.href = `${data.loghealth_url}/?imported=1&count=${encodeURIComponent(data.accepted || 0)}#overview`;
+        }, 650);
+    } catch (error) {
+        status.textContent = error.message || "Could not import into LogHealth.";
+    } finally {
+        button.disabled = false;
+        button.textContent = "Import log to LogHealth ↗";
+    }
+});
 
 /* ================================================= */
 /* EXPORT CSV */
